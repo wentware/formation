@@ -1,4 +1,16 @@
 # formation
 forms and flows with semantically rich data
 
-## some topic
+initial project from meteor
+
+# tech stack
+
+meteor + react
+
+# run
+
+```
+  meteor
+```
+
+# test
