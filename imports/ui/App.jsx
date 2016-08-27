@@ -1,49 +1,73 @@
-import React, { Component } from 'react';
+import React, { Component, PropTypes } from 'react';
+import ReactDOM from 'react-dom';
+import injectTapEventPlugin from 'react-tap-event-plugin';
+import { createContainer } from 'meteor/react-meteor-data';
 
-import Task from './Task.jsx';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import Paper from 'material-ui/Paper';
+
+import { Nodes } from '../api/nodes.js';
+
 import BaseNode from './BaseNode.jsx';
+import NodeEntryDialog from './NodeEntryDialog.js';
+import NodeList from './NodeList.js';
+import NodeListAppBar from './NodeListAppBar.js';
 
-// App component - represents the whole app
+// Needed for onTouchTap
+// http://stackoverflow.com/a/34015469/988941
+injectTapEventPlugin();
+
+const style = {
+  margin: 20,
+  width: 800,
+  textAlign: 'left',
+
+};
+
 export default class App extends Component {
-  getTasks() {
-    return [
-      { _id: 1, text: 'This is task 1' },
-      { _id: 2, text: 'This is task 2' },
-      { _id: 3, text: 'This is task 3' },
-    ];
+
+  handleDeleteNode(nodeId) {
+    console.log('delete node with id ',nodeId);
+    Nodes.remove(nodeId);
   }
 
-  getNodes() {
-      return [
-        { _id: 1, nodeName: 'This is node 1', nodeType: 'contentNode' },
-        { _id: 2, nodeName: 'This is node 2', nodeType: 'contentNode' },
-        { _id: 3, nodeName: 'This is node 3', nodeType: 'contentNode' },
-      ];
-    }
+  handleOnConfirm(newNode) {
+    console.log('confirmed', newNode );
 
-    renderTasks() {
-      return this.getTasks().map((task) => (
-        <Task key={task._id} task={task} />
-      ));
-    }
 
-    renderNodes() {
-        return this.getNodes().map((node) => (
-          <li><BaseNode key={node._id} nodeContent={node} nodeName={node.nodeName} nodeId={node._id} nodeType={node.nodeType} /></li>
-        ));
-    }
+    Nodes.insert({
+      nodeName: newNode.nodeName,
+      nodeType: newNode.nodeType,
+      nodeContent: JSON.stringify(newNode),
+      createdAt: new Date(), // current time
+    });
+  }
 
   render() {
     return (
-      <div className="container">
-        <header>
-          <h1>Node List</h1>
-        </header>
+      <MuiThemeProvider>
+      <div>
+      <NodeListAppBar/>
+      <Paper style={style} zDepth={2} >
 
-        <ul>
-          {this.renderNodes()}
-        </ul>
+        <NodeEntryDialog onConfirm={this.handleOnConfirm}></NodeEntryDialog>
+
+        <NodeList nodes={this.props.nodes} onDelete={this.handleDeleteNode}>
+        </NodeList>
+      </Paper>
+
       </div>
+      </MuiThemeProvider>
     );
   }
 }
+
+App.propTypes =  {
+  nodes: PropTypes.array.isRequired,
+};
+
+export default createContainer(() => {
+  return {
+    nodes: Nodes.find({}, {sort: {createdAt: -1}}).fetch(),
+  };
+}, App);
